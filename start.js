@@ -6,7 +6,7 @@ const PORT = process.env.PORT || "3000"; const PROJECT_REF = process.env.PROJECT
 if (!PROJECT_REF || /\s/.test(PROJECT_REF)) {
   console.error(
     "ERROR: PROJECT_REF is missing or contains spaces. " +
-    "Set it to your Supabase project reference (e.g., abcd1234), not the project NAME."
+      "Set it to your Supabase project reference (e.g., abcd1234), not the project NAME."
   );
   process.exit(1);
 }
@@ -15,10 +15,9 @@ if (!SUPABASE_ACCESS_TOKEN) {
   process.exit(1);
 }
 
-// NOTE: we call smithery gateway which spawns the official Supabase MCP server via npx const command = "npx"; const args = [
+// Launch Smithery gateway which launches the official Supabase MCP server via npx const command = "npx"; const args = [
   "@smithery/gateway",
   "--stdio",
-  // spawn the official Supabase MCP server (read-only) with your project ref
   `npx -y @supabase-community/supabase-mcp --read-only --project-ref=${PROJECT_REF}`,
   "--port",
   PORT
@@ -29,7 +28,7 @@ console.log("[launcher] Starting MCP gateway on port", PORT); console.log("[laun
 const child = spawn(command, args, {
   env: {
     ...process.env,
-    SUPABASE_ACCESS_TOKEN // ensure child receives PAT
+    SUPABASE_ACCESS_TOKEN // ensure child process receives the PAT
   },
   stdio: "inherit",
   shell: true
