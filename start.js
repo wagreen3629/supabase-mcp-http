@@ -1,6 +1,6 @@
 // start.js — force Smithery gateway to bind to Render's PORT and pass env cleanly import { spawn } from "node:child_process";
 
-const PORT = process.env.PORT || "3000"; const PROJECT_REF = process.env.PROJECT_REF; const SUPA-BASE_ACCESS_TOKEN = process.env.SUPABASE_ACCESS_TOKEN;
+const PORT = process.env.PORT || "3000"; const PROJECT_REF = process.env.PROJECT_REF; const SUPABASE_ACCESS_TOKEN = process.env.SUPABASE_ACCESS_TOKEN;
 
 // sanity checks
 if (!PROJECT_REF || /\s/.test(PROJECT_REF)) {
