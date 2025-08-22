@@ -1,0 +1,7 @@
+{
+  "name": "supabase-mcp-http",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "SUPABASE_ACCESS_TOKEN=$SUPABASE_ACCESS_TOKEN npx @smithery/gateway --stdio \"npx -y @supabase/mcp-server-supabase@latest --read-only --project-ref=$PROJECT_REF\" --port $PORT"
+  }
+}
