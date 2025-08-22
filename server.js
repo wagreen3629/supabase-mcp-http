@@ -97,9 +97,9 @@ function startMCPChild() {
 // Start MCP child process
 startMCPChild();
 
-// SSE endpoint for n8n MCP client
+// SSE/MCP endpoint - handle both GET (SSE) and POST (JSON-RPC)
 app.get("/sse", (req, res) => {
-  console.log("[sse] New SSE connection from:", req.ip);
+  console.log("[sse] GET request - SSE connection from:", req.ip);
   console.log("[sse] User-Agent:", req.get('User-Agent'));
   console.log("[sse] Headers:", JSON.stringify(req.headers, null, 2));
   console.log("[sse] Query params:", req.query);
@@ -149,6 +149,93 @@ app.get("/sse", (req, res) => {
     console.error("[sse] SSE connection error:", error.message);
     clearInterval(keepAlive);
   });
+});
+
+// Handle POST requests to /sse (n8n MCP Client sends these)
+app.post("/sse", async (req, res) => {
+  console.log("[sse] POST request - MCP JSON-RPC from:", req.ip);
+  console.log("[sse] User-Agent:", req.get('User-Agent'));
+  console.log("[sse] Request body:", JSON.stringify(req.body, null, 2));
+
+  // This is the same logic as /message endpoint
+  // Ensure we have a working MCP child
+  if (!mcpChild || mcpChild.killed || !childReady) {
+    console.log("[sse] MCP child not ready, restarting...");
+    startMCPChild();
+    
+    // Wait for child to be ready
+    return setTimeout(() => {
+      if (!childReady) {
+        return res.status(503).json({ 
+          error: "MCP service unavailable", 
+          message: "Child process not ready" 
+        });
+      }
+    }, 3000);
+  }
+
+  try {
+    // Prepare JSON-RPC message
+    const message = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
+    const messageWithNewline = message + "\n";
+    
+    console.log("[sse] Sending to MCP child:", messageWithNewline.trim());
+
+    // Set up response handling with timeout
+    let responseReceived = false;
+    
+    const responseTimeout = setTimeout(() => {
+      if (!responseReceived) {
+        console.error("[sse] MCP response timeout");
+        res.status(504).json({ 
+          error: "MCP timeout", 
+          message: "No response from MCP child within 15 seconds" 
+        });
+        responseReceived = true;
+      }
+    }, 15000);
+
+    // Listen for response from MCP child
+    const onData = (data) => {
+      if (responseReceived) return;
+      
+      clearTimeout(responseTimeout);
+      responseReceived = true;
+      
+      const responseText = data.toString().trim();
+      console.log("[sse] MCP raw response:", responseText);
+      
+      try {
+        const response = JSON.parse(responseText);
+        console.log("[sse] MCP parsed response:", JSON.stringify(response, null, 2));
+        res.json(response);
+      } catch (parseError) {
+        console.error("[sse] Failed to parse MCP response:", parseError.message);
+        console.error("[sse] Raw response was:", responseText);
+        res.status(500).json({ 
+          error: "Invalid MCP response", 
+          message: parseError.message,
+          raw_response: responseText
+        });
+      }
+      
+      // Remove this specific listener
+      mcpChild.stdout.removeListener("data", onData);
+    };
+
+    // Add response listener
+    mcpChild.stdout.on("data", onData);
+    
+    // Send message to MCP child
+    mcpChild.stdin.write(messageWithNewline);
+
+  } catch (error) {
+    console.error("[sse] Error processing request:", error.message);
+    res.status(500).json({ 
+      error: "Internal server error", 
+      message: error.message 
+    });
+  }
 });
 
 // Handle CORS preflight with n8n specific headers
