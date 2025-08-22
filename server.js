@@ -28,6 +28,13 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.text({ limit: '10mb' }));
 
+// Log all requests
+app.use((req, res, next) => {
+  console.log(`[request] ${req.method} ${req.url} from ${req.ip}`);
+  console.log(`[request] User-Agent: ${req.get('User-Agent') || 'none'}`);
+  next();
+});
+
 // Health check endpoint
 app.get("/health", (req, res) => {
   console.log("[health] Health check requested");
@@ -93,6 +100,9 @@ startMCPChild();
 // SSE endpoint for n8n MCP client
 app.get("/sse", (req, res) => {
   console.log("[sse] New SSE connection from:", req.ip);
+  console.log("[sse] User-Agent:", req.get('User-Agent'));
+  console.log("[sse] Headers:", JSON.stringify(req.headers, null, 2));
+  console.log("[sse] Query params:", req.query);
   
   // Set SSE headers
   res.writeHead(200, {
