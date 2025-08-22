@@ -1,45 +1,41 @@
-// start.js — Launch Smithery gateway (HTTP/SSE) and run Supabase MCP via STDIO.
-// Fixes: 1) bind to Render's PORT, 2) pass full child command (not just "npx").
+// start.js
 import { spawn } from "node:child_process";
 
-const PORT = process.env.PORT || "3000";     // Render injects PORT at runtime
-const PROJECT_REF = process.env.PROJECT_REF; // e.g., abcd1234 (no spaces)
+const PORT = process.env.PORT || "3000";      // Render injects PORT at runtime
+const HOST = "0.0.0.0";                        // bind to all interfaces
+const PROJECT_REF = process.env.PROJECT_REF;   // e.g. abcdefgh (no spaces)
 const SUPABASE_ACCESS_TOKEN = process.env.SUPABASE_ACCESS_TOKEN;
 
 if (!PROJECT_REF) {
-    console.error("ERROR: Missing PROJECT_REF (Supabase project ref). Set in Render > Environment.");
+    console.error("ERROR: Missing PROJECT_REF env var (Supabase project ref).");
     process.exit(1);
 }
 
 if (!SUPABASE_ACCESS_TOKEN) {
-    console.error("ERROR: Missing SUPABASE_ACCESS_TOKEN. Set in Render > Environment.");
+    console.error("ERROR: Missing SUPABASE_ACCESS_TOKEN env var.");
     process.exit(1);
 }
 
-// We pass the child command using --stdio.command + repeated --stdio.args
-// so the gateway receives the entire command and its arguments.
-const gatewayCmd = "npx";
-const gatewayArgs = [
+// IMPORTANT: pass the entire child command as ONE string after --stdio.
+// Also force host=0.0.0.0 so Render can reach it.
+const stdioCommand = `npx -y @supabase-community/supabase-mcp --read-only --project-ref=${PROJECT_REF}`;
+const args = [
     "@smithery/gateway",
-    "--stdio.command", "npx",
-    "--stdio.args", "-y",
-    "--stdio.args", "@supabase-community/supabase-mcp",
-    "--stdio.args", "--read-only",
-    "--stdio.args", `--project-ref=${PROJECT_REF}`,
-    "--port", PORT
+    "--host", HOST,
+    "--port", PORT,
+    "--stdio", stdioCommand
 ];
 
-console.log("[launcher] Starting MCP gateway on port", PORT);
-console.log("[launcher] Using PROJECT_REF:", PROJECT_REF);
-console.log("[launcher] Token present:", Boolean(SUPABASE_ACCESS_TOKEN));
+console.log("[launcher] Starting MCP gateway");
+console.log("[launcher] PORT         =", PORT);
+console.log("[launcher] HOST         =", HOST);
+console.log("[launcher] PROJECT_REF  =", PROJECT_REF);
+console.log("[launcher] Token present =", Boolean(SUPABASE_ACCESS_TOKEN));
 
-const child = spawn(gatewayCmd, gatewayArgs, {
-    env: { ...process.env, SUPABASE_ACCESS_TOKEN }, // ensure PAT is visible to child
+const child = spawn("npx", args, {
+    shell: true,
     stdio: "inherit",
-    shell: true
+    env: { ...process.env, SUPABASE_ACCESS_TOKEN }
 });
 
-child.on("exit", (code) => {
-    console.error("[launcher] Gateway exited with code:", code);
-    process.exit(code ?? 1);
-});
+child.on("exit", (code) => process.exit(code ?? 1));
