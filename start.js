@@ -1,7 +1,7 @@
 // start.js
 import { spawn } from "node:child_process";
 
-const PORT = process.env.PORT || "3000";      // Render injects PORT at runtime
+const PORT = "3000";      // Render injects PORT at runtime
 const HOST = "0.0.0.0";                        // bind to all interfaces
 const PROJECT_REF = process.env.PROJECT_REF;   // e.g. abcdefgh (no spaces)
 const SUPABASE_ACCESS_TOKEN = process.env.SUPABASE_ACCESS_TOKEN;
