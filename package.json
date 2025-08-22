@@ -1,7 +1,10 @@
-{
+
   "name": "supabase-mcp-http",
-  "version": "1.0.0",
+  "version": "1.0.1",
+  "private": true,
+  "type": "module",
   "scripts": {
-    "start": "SUPABASE_ACCESS_TOKEN=$SUPABASE_ACCESS_TOKEN npx @smithery/gateway --stdio \"npx -y @supabase-community/supabase-mcp --read-only --project-ref=$PROJECT_REF\" --port $PORT"
-  }
+    "start": "node start.js"
+  },
+  "dependencies": {}
 }
