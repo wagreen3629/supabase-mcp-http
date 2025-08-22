@@ -48,7 +48,7 @@ function startMCPChild() {
   
   mcpChild = spawn("npx", [
     "-y", 
-    "@supabase-community/supabase-mcp",
+    "@supabase/mcp-server-supabase",
     "--read-only",
     `--project-ref=${PROJECT_REF}`
   ], {
