@@ -104,14 +104,16 @@ app.get("/sse", (req, res) => {
   console.log("[sse] Headers:", JSON.stringify(req.headers, null, 2));
   console.log("[sse] Query params:", req.query);
   
-  // Set SSE headers
+  // Set SSE headers with additional n8n compatibility
   res.writeHead(200, {
     "Content-Type": "text/event-stream",
     "Cache-Control": "no-cache",
     "Connection": "keep-alive",
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "Cache-Control, Content-Type, Authorization",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS"
+    "Access-Control-Allow-Headers": "Cache-Control, Content-Type, Authorization, X-Requested-With",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "X-Accel-Buffering": "no", // Disable proxy buffering
+    "Access-Control-Expose-Headers": "*"
   });
 
   // Send initial connection event
@@ -149,11 +151,13 @@ app.get("/sse", (req, res) => {
   });
 });
 
-// Handle CORS preflight
+// Handle CORS preflight with n8n specific headers
 app.options("*", (req, res) => {
+  console.log("[cors] CORS preflight from:", req.ip);
   res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS, HEAD");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Accept");
+  res.header("Access-Control-Max-Age", "86400");
   res.sendStatus(200);
 });
 
