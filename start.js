@@ -16,13 +16,16 @@ if (!SUPABASE_ACCESS_TOKEN) {
   process.exit(1);
 }
 
-// ✅ FIXED: Proper stdio configuration format
+// ✅ CORRECTED: Use proper parameter format for Smithery Gateway
 const gatewayArgs = [
   "@smithery/gateway",
   "--host", HOST,
   "--port", PORT,
-  "--stdio-command", "npx",
-  "--stdio-args", "-y,@supabase-community/supabase-mcp,--read-only,--project-ref=" + PROJECT_REF,
+  // Try the correct parameter format
+  "--stdio", JSON.stringify({
+    command: "npx",
+    args: ["-y", "@supabase-community/supabase-mcp", "--read-only", `--project-ref=${PROJECT_REF}`]
+  })
 ];
 
 console.log("[launcher] Starting MCP gateway");
@@ -45,5 +48,26 @@ child.on("error", (error) => {
 
 child.on("exit", (code) => {
   console.error("[launcher] Gateway exited with code:", code);
-  process.exit(code ?? 1);
+  if (code === 1) {
+    console.log("[launcher] Restarting gateway in 5 seconds...");
+    setTimeout(() => {
+      // Restart the gateway
+      const newChild = spawn("npx", gatewayArgs, {
+        shell: true,
+        stdio: "inherit",
+        env: { ...process.env, SUPABASE_ACCESS_TOKEN },
+      });
+      // Copy event handlers to new child
+      newChild.on("error", (error) => {
+        console.error("[launcher] Failed to start gateway:", error.message);
+        process.exit(1);
+      });
+      newChild.on("exit", (code) => {
+        console.error("[launcher] Gateway exited with code:", code);
+        process.exit(code ?? 1);
+      });
+    }, 5000);
+  } else {
+    process.exit(code ?? 1);
+  }
 });
