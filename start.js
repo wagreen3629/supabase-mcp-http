@@ -16,12 +16,11 @@ if (!SUPABASE_ACCESS_TOKEN) {
   process.exit(1);
 }
 
-// ✅ CORRECTED: Use proper parameter format for Smithery Gateway
+// ✅ Try different gateway versions to avoid the bug
 const gatewayArgs = [
-  "@smithery/gateway",
+  "@smithery/gateway@0.0.7", // Try an older version
   "--host", HOST,
   "--port", PORT,
-  // Try the correct parameter format
   "--stdio", JSON.stringify({
     command: "npx",
     args: ["-y", "@supabase-community/supabase-mcp", "--read-only", `--project-ref=${PROJECT_REF}`]
